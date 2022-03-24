@@ -39,44 +39,49 @@ class Sudoku:
         else:
             raise TypeError("sudoku setitem indices must be tuples, not {}".format(type(pos).__name__))
 
-    def populate(self, dict):
+    def populate(self, dict): # given a dictionary of items and coordinates, populate the sudoku board with said coordinates
         for pos, item in dict.items():
             self[pos] = item
 
-    def __iter__(self):
-        for l in self.board:
-            for e in l:
-                yield e
-
-    def array_enumerate(self):
+    def __iter__(self): # iteration over a sudoku board will yield both the element and the coordinates
         for i,l in enumerate(self.board):
             for j,e in enumerate(list(l)):
                 yield (i,j), e
 
-    def simplify(self):
-        for t,e in self.array_enumerate():
+    def fill_empty(self): # fills all of the empty cells with the full set of possibilites 1-9, this will be reduced later
+        for t,e in self:
             if e is None:
-                self[t] = set(range(1,10))
-        for t,e in self.array_enumerate():
-            if type(e) is int:
-                for i,s in enumerate(self[(slice(t[0],t[0]+1),slice(0,9))][0]):
-                    if type(s) is set:
-                        temp_s = s
-                        temp_s.discard(e)
-                        self[(t[0],i)] = temp_s
-                for i,s in enumerate(self[(slice(0,9),slice(t[1],t[1]+1))]):
-                    if type(s) is set:
-                        temp_s = s[0]
-                        temp_s.discard(e)
-                        self[(i,t[1])] = temp_s
-                box = find_box(t)
-                for i,l in enumerate(self[box]):
-                    for j,s in enumerate(l):
-                        if type(s) is set:
-                            temp_s = s
-                            temp_s.discard(e)
-                            self[(box[0].start+i,box[1].start+j)] = temp_s
-        for t,e in self.array_enumerate():
+                self[t] = set(range(1,10)) # fills the empty space on the board with all possibilities 1-9
+
+    def discard(self, t, e): # discards an element from a set at a given position
+        if type(self[t]) is set:
+            temp_s = self[t]
+            temp_s.discard(e)
+            self[t] = temp_s
+
+    def box_simplify(self, b, t): # simplifies a cell by a defined box neighborhood
+        x_range = range(9)[b[0]]
+        y_range = range(9)[b[1]]
+        if type(self[t]) is set: # this simplifies a set by the values surrounding it
+            for (i,j),e in self:
+                if i in x_range and j in y_range and type(e) is int:
+                    self.discard(t,e)
+        elif type(self[t]) is int: # this simplifies the sets around a value
+            for (i,j),e in self:
+                if i in x_range and j in y_range and type(e) is set:
+                    self.discard((i,j),self[t])
+
+    def full_simplify(self, t): # simplifies a single cell using the integers in its neighborhood.
+        self.box_simplify(find_box(t))
+        self.box_simplify((slice(t[0],t[0]+1),slice(0,9)))
+        self.box_simplify((slice(0,9),slice(t[1],t[1]+1)))
+
+    def simplify(self):
+        self.fill_empty() # fills the empty space on the board with all possibilities 1-9
+        for t,e in self:
+            if type(e) is int: # remove known impossibilities
+                self.full_simplify(t)
+        for t,e in self: # crystallizes determined sets (sets with only one element)
             if type(e) is set:
                 if len(e) == 1:
                     self[t] = list(e)[0]
@@ -84,12 +89,12 @@ class Sudoku:
     def solve(self):
         temp_sudoku = Sudoku()
         while temp_sudoku.board != self.board: # simplify until it doesn't get any better
-            for t,e in self.array_enumerate():
+            for t,e in self:
                 temp_sudoku[t] = e
             self.simplify()
         smallestSet = set(range(1,10))
         setIndex = (-1,-1)
-        for t,e in self.array_enumerate(): # identify the smallest remaining array
+        for t,e in self: # identify the smallest remaining array
             if type(e) is set:
                 if len(e) < len(smallestSet):
                     smallestSet = e
@@ -99,12 +104,12 @@ class Sudoku:
         print(self)
         new_sudoku = Sudoku()
         for i in smallestSet: # solve recursively
-            for t,e in self.array_enumerate():
+            for t,e in self:
                     new_sudoku[t] = e
             new_sudoku[setIndex] = i
             new_sudoku.solve()
             if new_sudoku is not None:
-                for t,e in new_sudoku.array_enumerate():
+                for t,e in new_sudoku:
                     self[t] = e
                 return
         self = None
@@ -136,7 +141,7 @@ def find_box(coords):
 
 def main():
     test_sudoku = Sudoku()
-    test_sudoku.parse(".35.2....\n9....8.57\n7.849.6..\n6.4.7..3.\n8.2.637..\n35.84..9.\n47.28..6.\n...15..7.\n...63.42.")
+    test_sudoku.parse(".........\n.........\n.........\n.........\n.........\n.........\n.........\n.........\n.........")
     print(str(test_sudoku))
     test_sudoku.solve()
     print(test_sudoku)
