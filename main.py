@@ -72,11 +72,22 @@ class Sudoku:
                     self.discard((i,j),self[t])
 
     def full_simplify(self, t): # simplifies a single cell using the integers in its neighborhood.
-        self.box_simplify(find_box(t))
-        self.box_simplify((slice(t[0],t[0]+1),slice(0,9)))
-        self.box_simplify((slice(0,9),slice(t[1],t[1]+1)))
+        self.box_simplify(find_box(t),t)
+        self.box_simplify((slice(t[0],t[0]+1),slice(0,9)),t)
+        self.box_simplify((slice(0,9),slice(t[1],t[1]+1)),t)
 
     def is_correct(self): # TODO implement is_correct
+        for i in range(9):
+            if not {i for l in self[(slice(i,i+1),slice(0,9))] for i in l}.issubset(set(range(9))):
+                return False
+        for i in range(9):
+            if not {i for l in self[(slice(0,9),slice(i,i+1))] for i in l}.issubset(set(range(9))):
+                return False
+        for i in range(3):
+            for j in range(3):
+                if not {i for l in self[(slice(i*3,i*3+3),slice(j*3,j*3+3))] for i in l}.issubset(set(range(9))):
+                    return False
+        
         return True
 
     def simplify(self):
@@ -90,6 +101,7 @@ class Sudoku:
                     self[t] = list(e)[0]
 
     def solve(self):
+        print(self, 1)
         temp_sudoku = Sudoku()
         while temp_sudoku.board != self.board: # simplify until it doesn't get any better
             for t,e in self:
@@ -104,14 +116,14 @@ class Sudoku:
                     setIndex = t
         if setIndex == (-1,-1):
             return
-        print(self)
+        print(self, 2)
         new_sudoku = Sudoku()
         for i in smallestSet: # solve recursively
             for t,e in self:
                     new_sudoku[t] = e
             new_sudoku[setIndex] = i
             new_sudoku.solve()
-            if new_sudoku is not None:
+            if new_sudoku is not None and new_sudoku.is_correct():
                 for t,e in new_sudoku:
                     self[t] = e
                 return
@@ -144,7 +156,7 @@ def find_box(coords):
 
 def main():
     test_sudoku = Sudoku()
-    test_sudoku.parse(".........\n.........\n.........\n.........\n.........\n.........\n.........\n.........\n.........")
+    test_sudoku.parse("827.15.43\n3.1249.76\n...8...25\n6.....2..\n.1839....\n....61.3.\n.62..43..\n1.5...48.\n...9...1.")
     print(str(test_sudoku))
     test_sudoku.solve()
     print(test_sudoku)
