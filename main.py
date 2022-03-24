@@ -76,6 +76,9 @@ class Sudoku:
         self.box_simplify((slice(t[0],t[0]+1),slice(0,9)))
         self.box_simplify((slice(0,9),slice(t[1],t[1]+1)))
 
+    def is_correct(self): # TODO implement is_correct
+        return True
+
     def simplify(self):
         self.fill_empty() # fills the empty space on the board with all possibilities 1-9
         for t,e in self:
