@@ -103,12 +103,9 @@ class Sudoku:
                     if len(e) == 1:
                         count += 1
                         self[t] = list(e)[0]
-                        print(t,e)
-                        print(self)
                         self.full_simplify(t) # simplifies around the newly crystalized value
 
     def solve(self):
-        print("entered solve")
         self.simplify()
         smallestSet = set(range(10))
         setIndex = (-1,-1)
@@ -124,9 +121,7 @@ class Sudoku:
         print("found smallest set")
         print(self)
         for i in smallestSet: # solve recursively
-            print("check", i)
             new_sudoku = Sudoku()
-            print(self[(0,4)])
             for t,e in self:
                 if type(e) is set:
                     new_sudoku[t] = set(e)
