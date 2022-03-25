@@ -76,16 +76,16 @@ class Sudoku:
         self.box_simplify((slice(t[0],t[0]+1),slice(0,9)),t)
         self.box_simplify((slice(0,9),slice(t[1],t[1]+1)),t)
 
-    def is_correct(self): # TODO implement is_correct
+    def is_solved(self): # TODO implement is_solved
         for i in range(9):
-            if not {i for l in self[(slice(i,i+1),slice(0,9))] for i in l}.issubset(set(range(9))):
+            if sorted([i for l in self[(slice(i,i+1),slice(0,9))] for i in l if type(i) is int]) != list(range(1,10)):
                 return False
         for i in range(9):
-            if not {i for l in self[(slice(0,9),slice(i,i+1))] for i in l}.issubset(set(range(9))):
+            if sorted([i for l in self[(slice(0,9),slice(i,i+1))] for i in l if  type(i) is int]) != list(range(1,10)):
                 return False
         for i in range(3):
             for j in range(3):
-                if not {i for l in self[(slice(i*3,i*3+3),slice(j*3,j*3+3))] for i in l}.issubset(set(range(9))):
+                if sorted([i for l in self[(slice(i*3,i*3+3),slice(j*3,j*3+3))] for i in l if  type(i) is int]) != list(range(1,10)):
                     return False
         
         return True
@@ -95,19 +95,22 @@ class Sudoku:
         for t,e in self:
             if type(e) is int: # remove known impossibilities
                 self.full_simplify(t)
-        for t,e in self: # crystallizes determined sets (sets with only one element)
-            if type(e) is set:
-                if len(e) == 1:
-                    self[t] = list(e)[0]
+        count = 1
+        while count > 0: # simplify until it doesn't get any better
+            count = 0
+            for t,e in self: # crystallizes determined sets (sets with only one element)
+                if type(e) is set:
+                    if len(e) == 1:
+                        count += 1
+                        self[t] = list(e)[0]
+                        print(t,e)
+                        print(self)
+                        self.full_simplify(t) # simplifies around the newly crystalized value
 
     def solve(self):
-        print(self, 1)
-        temp_sudoku = Sudoku()
-        while temp_sudoku.board != self.board: # simplify until it doesn't get any better
-            for t,e in self:
-                temp_sudoku[t] = e
-            self.simplify()
-        smallestSet = set(range(1,10))
+        print("entered solve")
+        self.simplify()
+        smallestSet = set(range(10))
         setIndex = (-1,-1)
         for t,e in self: # identify the smallest remaining array
             if type(e) is set:
@@ -115,18 +118,26 @@ class Sudoku:
                     smallestSet = e
                     setIndex = t
         if setIndex == (-1,-1):
-            return
-        print(self, 2)
-        new_sudoku = Sudoku()
+            return self
+        if smallestSet == {}:
+            return None
+        print("found smallest set")
+        print(self)
         for i in smallestSet: # solve recursively
+            print("check", i)
+            new_sudoku = Sudoku()
+            print(self[(0,4)])
             for t,e in self:
+                if type(e) is set:
+                    new_sudoku[t] = set(e)
+                else:
                     new_sudoku[t] = e
             new_sudoku[setIndex] = i
             new_sudoku.solve()
-            if new_sudoku is not None and new_sudoku.is_correct():
+            if new_sudoku is not None and new_sudoku.is_solved():
                 for t,e in new_sudoku:
                     self[t] = e
-                return
+                return self
         self = None
 
     def parse(self, boardstr):
@@ -156,7 +167,7 @@ def find_box(coords):
 
 def main():
     test_sudoku = Sudoku()
-    test_sudoku.parse("827.15.43\n3.1249.76\n...8...25\n6.....2..\n.1839....\n....61.3.\n.62..43..\n1.5...48.\n...9...1.")
+    test_sudoku.parse("........8\n.2..3....\n..64..19.\n...5....7\n..8.....4\n.6...285.\n.......7.\n..19..56.\n9....4...")
     print(str(test_sudoku))
     test_sudoku.solve()
     print(test_sudoku)
