@@ -39,27 +39,32 @@ class Sudoku:
         else:
             raise TypeError("sudoku setitem indices must be tuples, not {}".format(type(pos).__name__))
 
-    def populate(self, dict): # given a dictionary of items and coordinates, populate the sudoku board with said coordinates
+    def populate(self, dict):
+        """given a dictionary of items and coordinates, populate the sudoku board with said coordinates"""
         for pos, item in dict.items():
             self[pos] = item
 
-    def __iter__(self): # iteration over a sudoku board will yield both the element and the coordinates
+    def __iter__(self):
+        """iteration over a sudoku board will yield both the element and the coordinates"""
         for i,l in enumerate(self.board):
             for j,e in enumerate(list(l)):
                 yield (i,j), e
 
-    def fill_empty(self): # fills all of the empty cells with the full set of possibilites 1-9, this will be reduced later
+    def fill_empty(self):
+        """fills all of the empty cells with the full set of possibilites 1-9, this will be reduced later"""
         for t,e in self:
             if e is None:
                 self[t] = set(range(1,10)) # fills the empty space on the board with all possibilities 1-9
 
-    def discard(self, t, e): # discards an element from a set at a given position
+    def discard(self, t, e):
+        """discards an element from a set at a given position"""
         if type(self[t]) is set:
             temp_s = self[t]
             temp_s.discard(e)
             self[t] = temp_s
 
-    def box_simplify(self, b, t): # simplifies a cell by a defined box neighborhood
+    def box_simplify(self, b, t):
+        """simplifies a cell by a defined box neighborhood"""
         x_range = range(9)[b[0]]
         y_range = range(9)[b[1]]
         if type(self[t]) is set: # this simplifies a set by the values surrounding it
@@ -71,12 +76,14 @@ class Sudoku:
                 if i in x_range and j in y_range and type(e) is set:
                     self.discard((i,j),self[t])
 
-    def full_simplify(self, t): # simplifies a single cell using the integers in its neighborhood.
+    def full_simplify(self, t): 
+        """simplifies a single cell using the integers in its neighborhood."""
         self.box_simplify(find_box(t),t)
         self.box_simplify((slice(t[0],t[0]+1),slice(0,9)),t)
         self.box_simplify((slice(0,9),slice(t[1],t[1]+1)),t)
 
-    def is_solved(self): # TODO implement is_solved
+    def is_solved(self):
+        """checks if the sudoku board is solved"""
         for i in range(9):
             if sorted([i for l in self[(slice(i,i+1),slice(0,9))] for i in l if type(i) is int]) != list(range(1,10)):
                 return False
